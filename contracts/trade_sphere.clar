@@ -7,6 +7,7 @@
 (define-constant err-unauthorized (err u102))
 (define-constant err-invalid-state (err u103))
 (define-constant err-invalid-token (err u104))
+(define-constant err-already-funded (err u105))
 
 ;; Data Variables
 (define-map trades
@@ -28,7 +29,8 @@
     {
         amount: uint,
         token-contract: principal, 
-        released: bool
+        released: bool,
+        funded: bool
     }
 )
 
@@ -105,7 +107,8 @@
             {
                 amount: u0,
                 token-contract: token-contract,
-                released: false
+                released: false,
+                funded: false
             }
         )
         (var-set trade-counter (+ trade-id u1))
@@ -117,7 +120,9 @@
 (define-public (fund-escrow (trade-id uint))
     (let (
         (trade (unwrap! (map-get? trades {trade-id: trade-id}) err-invalid-trade))
+        (escrow-data (unwrap! (map-get? escrow {trade-id: trade-id}) err-invalid-trade))
     )
+    (asserts! (not (get funded escrow-data)) err-already-funded)
     (if (is-eq tx-sender (get buyer trade))
         (begin
             (try! (transfer-token (get token-contract trade) (get amount trade) tx-sender (as-contract tx-sender)))
@@ -126,7 +131,8 @@
                 {
                     amount: (get amount trade),
                     token-contract: (get token-contract trade),
-                    released: false
+                    released: false,
+                    funded: true
                 }
             )
             (ok true)
@@ -141,6 +147,7 @@
         (trade (unwrap! (map-get? trades {trade-id: trade-id}) err-invalid-trade))
         (escrow-data (unwrap! (map-get? escrow {trade-id: trade-id}) err-invalid-trade))
     )
+    (asserts! (get funded escrow-data) err-invalid-state)
     (if (and (is-eq tx-sender (get buyer trade)) (not (get released escrow-data)))
         (begin
             (try! (as-contract (transfer-token 
@@ -158,9 +165,6 @@
         err-unauthorized
     ))
 )
-
-;; Other existing functions remain unchanged
-;; update-status, add-documents, raise-dispute
 
 ;; Read-only functions
 
