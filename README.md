@@ -9,6 +9,7 @@ A decentralized platform for international trade built on the Stacks blockchain.
 - Dispute resolution mechanism
 - Trade documentation storage
 - Token whitelisting for supported currencies
+- Enhanced escrow safety with double-funding prevention
 
 ## Usage
 The contract provides functionality for:
@@ -28,6 +29,11 @@ The platform supports multiple currencies for trade settlement:
 - Contract owner can add new supported tokens
 - Contract owner can remove tokens from supported list
 - Only whitelisted tokens can be used for trades
+
+## Escrow Safety Features
+- Prevention of double-funding escrow accounts
+- State tracking for funded escrow accounts
+- Required funding validation before release
 
 ## Contract Functions
 See the contract documentation for details on available functions and their usage.
