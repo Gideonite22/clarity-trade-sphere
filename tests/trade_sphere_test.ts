@@ -59,4 +59,36 @@ Clarinet.test({
   }
 });
 
-// Include existing tests with modifications for token support
+Clarinet.test({
+  name: "Cannot fund escrow twice",
+  async fn(chain: Chain, accounts: Map<string, Account>) {
+    const deployer = accounts.get('deployer')!;
+    const buyer = accounts.get('wallet_1')!;
+    const seller = accounts.get('wallet_2')!;
+    const tokenContract = accounts.get('wallet_3')!;
+    
+    // Setup trade
+    chain.mineBlock([
+      Tx.contractCall('trade_sphere', 'add-supported-token', [
+        types.principal(tokenContract.address)
+      ], deployer.address),
+      Tx.contractCall('trade_sphere', 'create-trade', [
+        types.principal(seller.address),
+        types.uint(1000),
+        types.principal(tokenContract.address),
+        types.utf8("Shipping to: 123 Trade St")
+      ], buyer.address)
+    ]);
+    
+    let block = chain.mineBlock([
+      Tx.contractCall('trade_sphere', 'fund-escrow', [
+        types.uint(0)
+      ], buyer.address),
+      Tx.contractCall('trade_sphere', 'fund-escrow', [
+        types.uint(0)
+      ], buyer.address)
+    ]);
+    
+    block.receipts[1].result.expectErr(105); // err-already-funded
+  }
+});
